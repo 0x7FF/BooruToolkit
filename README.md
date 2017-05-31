@@ -42,6 +42,16 @@ You'll probably have to input them manually, so keep in mind that all of your dr
 4. Push to the branch: `git push origin my-new-feature`
 5. Submit a pull request.
 
+## Known bugs
+
+- [ ] Unexpected behavior if your file has an MD5 in its name anywhere other than in the beginning
+
+- [ ] Bash on Windows: you have to manually change "output_windows" function to include your own paths instead of the default ones
+
+- [ ] Soft-linking is a two-edged sword: it doesn't modify the original files, but because of that you can only view files by one tag (unless you can somehow list files that only exist in certain directories)
+
+- [ ] File deletion isn't handled yet, expect dead links in your tag folders if you delete an image.
+
 ## History
 
 ### TagOrganizer 2.0
