@@ -9,6 +9,7 @@ Out of the box this app supports Windows 10 (using Bash on Windows) and Linux, b
 Since this app is extensible, you can do tagging the way you want to. I've added a template as well as a short manual on how to implement your own modules.
 
 ## Features
+* Supports TMSU out of the box
 * Can be used with e926.net to avoid filters
 * Easily add your own methods for tagging
 * Everything is broken into functions, code is easy to read and understand.
