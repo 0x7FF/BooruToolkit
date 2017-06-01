@@ -9,9 +9,10 @@ Out of the box this app supports Windows 10 (using Bash on Windows) and Linux, b
 Since this app is extensible, you can do tagging the way you want to. I've added a template as well as a short manual on how to implement your own modules.
 
 ## Features
-* Can be used with e926.net to avoid firewalls
-* Easy to modify and extend upon
-* Soft-link tagging is zero-maintenance and zero-wasted-space
+* Can be used with e926.net to avoid filters
+* Easily add your own methods for tagging
+* Everything is broken into functions, code is easy to read and understand.
+* Soft-link tagging is zero-maintenance and doesn't require extra software
 * Doesn't touch the original files, no backups required
 
 ## Installation
@@ -22,17 +23,26 @@ Since this app is extensible, you can do tagging the way you want to. I've added
 
 ## Usage
 
-### Linux:
-* install curl, xmllint, diff, recode, md5sum and sed (you will be prompted to install them if any of these are missing)
+### Linux ln:
+* install curl, xmllint, diff, recode, md5sum and sed (you will be prompted to install them if any are missing)
 * Run the script
-* When asked, specify where your files are stored (keep in mind that this script is not recursive by default) and where to create folders with tagged images
+* When asked, specify where your files are stored and where to create folders with tagged images
 
-### Bash on Windows:
-* install curl, xmllint, diff, recode, md5sum and sed (you will be prompted to install them if any of these are missing)
-* edit function `output_windows` to include your own folders instead of defaults (this will be fixed in the next release)
-* When asked, specify where your files are stored (keep in mind that this script is not recursive by default) and where to create folders with tagged images
+### Bash on Windows (mklink):
+* install curl, xmllint, diff, recode, md5sum and sed (you will be prompted to install them if any are missing)
+* Run the script
+* When asked, specify where your files are stored and where to create folders with tagged images
 
-You'll probably have to input them manually, so keep in mind that all of your drives reside in /mnt/*driveletter*
+### TMSU
+* install curl, xmllint, diff, recode, md5sum and sed (you will be prompted to install them if any are missing)
+* run `tmsu init ~` if you haven't done so already
+* Run the script
+* When asked, specify where your files are stored.
+
+### Custom methods
+Function "proc" is iteratively run for every file and every tag in that file. As soon as it's called, you have access to source path, destination path, full name, MD5 and a tag, all available as standard bash variables.
+
+Please consult MODIFY for instructions on creating your own methods.
 
 ## Contributing
 
@@ -44,15 +54,12 @@ You'll probably have to input them manually, so keep in mind that all of your dr
 
 ## Known bugs
 
-- [ ] Unexpected behavior if your file has an MD5 in its name anywhere other than in the beginning
-
-- [ ] Bash on Windows: you have to manually change "output_windows" function to include your own paths instead of the default ones
-
-- [ ] Soft-linking is a two-edged sword: it doesn't modify the original files, but because of that you can only view files by one tag (unless you can somehow list files that only exist in certain directories)
-
-- [ ] File deletion isn't handled yet, expect dead links in your tag folders if you delete an image.
+- [ ] File deletion in symlink mode isn't handled yet, expect dead links in your tag folders if you delete an image.
 
 ## History
+
+### TagOrganizer 2.1
+Added TMSU support and recursive mode.
 
 ### TagOrganizer 2.0
 Public release, added support for Linux distributions, configuration and more modular design.
@@ -62,7 +69,7 @@ Deprecated, only worked with Bash on Windows and only used hard-coded values. Sc
 
 ## Credits
 
-This program has been written in it's entirety by Ray Volkov (me). Certain features of this app have been made possible by applications like curl, xmllint, diff, recode, md5sum and sed, all of which belong to their original authors.
+This program has been written in it's entirety by me. Certain features of this app have been made possible by applications like curl, xmllint, diff, recode, md5sum and sed, all of which belong to their original authors.
 
 ## License
 
