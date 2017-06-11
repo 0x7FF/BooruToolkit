@@ -9,7 +9,6 @@ Out of the box this app supports Windows 10 (using Bash on Windows) and Linux, b
 Since this app is extensible, you can do tagging the way you want to. I've added a template as well as a short manual on how to implement your own modules.
 
 ## Features
-* Supports TMSU out of the box
 * Can be used with e926.net to avoid filters
 * Easily add your own methods for tagging
 * Everything is broken into functions, code is easy to read and understand.
@@ -56,8 +55,12 @@ Please consult MODIFY for instructions on creating your own methods.
 ## Known bugs
 
 - [ ] File deletion in symlink mode isn't handled yet, expect dead links in your tag folders if you delete an image.
+- [ ] TMSU module only works if your db is located in your home directory, modify the script if you want to use a different one.
 
 ## History
+
+### TagOrganizer 2.2
+Fixed recursive mode and other minor code improvements.
 
 ### TagOrganizer 2.1
 Added TMSU support and recursive mode.

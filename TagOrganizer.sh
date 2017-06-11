@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# e621TagOrganizer, version 2.1
+# e621TagOrganizer, version 2.2
 # This application is licensed under MIT, read LICENSE for more information
 # Copyright 2017 Ray Volkov (hexl on e621)
 
@@ -11,6 +11,7 @@ baseurl="https://e621.net"
 sleeprate=0.4
 dbg=0
 recursive=0
+slow=0
 
 source ./settings.cfg >/dev/null 2>&1 || true
 
@@ -29,19 +30,26 @@ function output_linux {
 	while read tag; do
 		ctag=$(echo $tag | sed -e 's/[^A-Za-z0-9._-]/_/g')
 		mkdir $sorteddir/"$ctag" 2>/dev/null || true
-		ln -s $librarydir/"$fn" $sorteddir/"$ctag"/"$fn" > /dev/null || true
+		if [[ "$recursive" == 0 ]]; then
+			ln -s $librarydir/"$fn" $sorteddir/"$ctag"/"$fn" > /dev/null || true
+		else
+			ln -s "$fn" $sorteddir/"$ctag"/"$fn" > /dev/null || true
 	done < ./data/post/$md5-tags.txt
 }
 
 function output_tmsu {
 	if [[ "$dbg" == "1" ]]; then echo "Debug: output_tmsu called"; fi
 	tags=$(xmllint --xpath "post/tags/text()" ./data/post/$md5.txt | recode html..UTF-8 | tr '/' '_'  | tr "\'" "_" | sed -e 's/[^A-Za-z0-9._ -()]/_/g' ) # "
-	tmsu tag --tags "$tags" $librarydir/"$fn" || true
+	if [[ "$recursive" == 0 ]]; then
+		tmsu tag --tags "$tags" $librarydir/"$fn" || true
+	else
+		tmsu tag --tags "$tags" "$fn" || true
+	fi
 }
 
 function output_custom {
 	# this is a template that you can use to implement your own tagging method.
-	# for example, tracker
+	# for example tracker
 	# Please read MODIFY for more information.
 	if [[ "$dbg" == "1" ]]; then echo "Debug: output_custom called"; fi
 	echo "[Simulated] Linking $librarydir/"$fn" to $sorteddir/"$ctag"/"$fn""
@@ -50,14 +58,21 @@ function output_custom {
 # Main function
 function proc {
 	if [[ "$dbg" == "1" ]]; then echo "Debug: proc called"; fi
+	if [[ "$slow" == "1" ]]; then sleep 1; fi
 	fn="$1" # fn - full name (image.jpg)
+	if [[ "$recursive" == 1 ]]; then
+		fn=`basename $1`
+	fi
 
 	# check if the filename is already an MD5
 	if [[ "$dbg" == "1" ]]; then echo "Debug: proc is checking MD5"; fi
 	if [[ "$fn" == "[a-f0-9]{32}"* ]]; then
 		md5=${fn:0:32}
 	else
-		md5=`md5sum "$librarydir/$fn" | awk '{ print $1 }'`
+		if [[ "$recursive" == 0 ]]; then
+			md5=`md5sum "$librarydir/$fn" | cut -c -32`
+		else
+			md5=`md5sum "$1" | cut -c -32`
 	fi
 
 	# check if we already have tags available, otherwise download them
@@ -85,7 +100,7 @@ function proc {
 
 # Fuction to initialize folders
 function tagorginit {
-	# rm -rf ./data/ 2>/dev/null || true # we reuse the post info if full re-scan is started, only remove the folder if absolutely necessary
+	# rm -rf ./data/ 2>/dev/null || true # we reuse the post info if full re-scan is started, only remove the folder if necessary
 	rm -f ./data/*.txt 2>/dev/null || true
 	mkdir ./data 2>/dev/null || true
 	mkdir ./data/post 2>/dev/null || true
@@ -149,6 +164,12 @@ then
 	    case $opt in
 	        "Windows mklink")
 	            platform="windows"
+							if [[ "$recursive" == 1 ]]; then
+								# It's not supported (yet) because of possible regressions with forward and backward slashes.
+								# This shouldn't be difficult to fix so you can expect this to work in the next version or so.
+								echo 'ERR: recursive mode is not supported on Windows (yet). Recursive mode will be disabled!'
+								recursive=0
+							fi
 							break
 	            ;;
 	        "Linux ln")
@@ -201,15 +222,16 @@ then
 			echo sorteddir="$sorteddir" >> ./settings.cfg
 			if [[ "$platform" == "windows" ]]; then echo winlibrarydir='$winlibrarydir' >> ./settings.cfg ; fi
 			if [[ "$platform" == "windows" ]]; then echo winsorteddir='$winsorteddir' >> ./settings.cfg ; fi
+			if [[ "$platform" == "windows" ]]; then echo 'recursive=0' >> ./settings.cfg ; fi # recursive mode plug
 		fi
 	fi
 fi
 
 cp ./processed.txt ./processed.txt.backup || true # backup processed file list in case something goes wrong
 if [[ "$recursive" == 0 ]]; then
-	find $librarydir -maxdepth 1 -type f | while read line ; do basename "$line" ; done > ./data/all.txt
+	find $librarydir -maxdepth 1 -type f > ./data/all.txt
 else
-	find $librarydir -type f | while read line ; do basename "$line" ; done > ./data/all.txt
+	find $librarydir -type f > ./data/all.txt
 fi
 
 # Sort files and prep them for diff
