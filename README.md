@@ -13,7 +13,7 @@ Since this app is extensible, you can do tagging the way you want to. I've added
 * Easily add your own methods for tagging
 * Everything is broken into functions, code is easy to read and understand.
 * Soft-link tagging is zero-maintenance and doesn't require extra software
-* Doesn't touch the original files, no backups required
+* Doesn't touch the original files, no backups required (though you should always back your things up, don't get the wrong idea!)
 
 ## Installation
 
@@ -54,13 +54,13 @@ Please consult MODIFY for instructions on creating your own methods.
 
 ## Known bugs
 
-- [ ] File deletion in symlink mode isn't handled yet, expect dead links in your tag folders if you delete an image.
-- [ ] TMSU module only works if your db is located in your home directory, modify the script if you want to use a different one.
+- [ ] File deletion isn't handled yet, expect dead links in your tag folders if you delete an image.
+- [ ] Recursive mode is not supported on Windows yet.
 
 ## History
 
 ### TagOrganizer 2.2
-Fixed recursive mode and other minor code improvements.
+Recursive mode is now live! as well as some minor code enhancements.
 
 ### TagOrganizer 2.1
 Added TMSU support and recursive mode.

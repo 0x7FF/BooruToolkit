@@ -34,6 +34,7 @@ function output_linux {
 			ln -s $librarydir/"$fn" $sorteddir/"$ctag"/"$fn" > /dev/null || true
 		else
 			ln -s "$fn" $sorteddir/"$ctag"/"$fn" > /dev/null || true
+		fi
 	done < ./data/post/$md5-tags.txt
 }
 
@@ -51,7 +52,13 @@ function output_custom {
 	# this is a template that you can use to implement your own tagging method.
 	# for example tracker
 	# Please read MODIFY for more information.
-	if [[ "$dbg" == "1" ]]; then echo "Debug: output_custom called"; fi
+	if [[ "$dbg" == "1" ]]; then
+		echo -e "Debug: output_custom called \
+		\nlibrarydir=$librarydir
+		\nfn=$fn
+		sorteddir=$sorteddir
+		\nctag=$ctag"
+	fi
 	echo "[Simulated] Linking $librarydir/"$fn" to $sorteddir/"$ctag"/"$fn""
 }
 
@@ -59,8 +66,8 @@ function output_custom {
 function proc {
 	if [[ "$dbg" == "1" ]]; then echo "Debug: proc called"; fi
 	if [[ "$slow" == "1" ]]; then sleep 1; fi
-	fn="$1" # fn - full name (image.jpg)
-	if [[ "$recursive" == 1 ]]; then
+	fn="$1" # fn - full name (image.jpg); in recursive mode this is the full path!
+	if [[ "$recursive" == 0 ]]; then
 		fn=`basename $1`
 	fi
 
@@ -73,12 +80,13 @@ function proc {
 			md5=`md5sum "$librarydir/$fn" | cut -c -32`
 		else
 			md5=`md5sum "$1" | cut -c -32`
+		fi
 	fi
 
 	# check if we already have tags available, otherwise download them
 	if [ ! -f ./data/post/$md5-tags.txt ]; then
 		if [[ "$dbg" == "1" ]]; then echo "Debug: downloading tags"; fi
-		curl -A "TagOrganizer/2.0 (by hexl on e621 using curl)" -s "$baseurl/post/show.xml?md5=$md5" > ./data/post/$md5.txt
+		curl -A "TagOrganizer/2.2 (+https://e621.net/forum/show/233498)" -s "$baseurl/post/show.xml?md5=$md5" > ./data/post/$md5.txt
 		xmllint --xpath "post/tags/text()" ./data/post/$md5.txt | tr " " "\n" | recode html..UTF-8 > ./data/post/$md5-tags.txt #"
 		sleep $sleeprate # rate limiter
 	fi
@@ -155,7 +163,7 @@ if [ "$licenseaccepted" != y ]; then liccheck; fi
 # if no configuration found, ask user
 if [ "$cfg" != "1" ]
 then
-	echo -e "No configuration file found, running first-time setup.\n"
+	echo -e "No configuration found, running first-time setup.\n"
 
 	PS3='How would you like to tag your files? '
 	options=("Windows mklink" "Linux ln" "Linux TMSU" "Custom")
@@ -165,8 +173,7 @@ then
 	        "Windows mklink")
 	            platform="windows"
 							if [[ "$recursive" == 1 ]]; then
-								# It's not supported (yet) because of possible regressions with forward and backward slashes.
-								# This shouldn't be difficult to fix so you can expect this to work in the next version or so.
+								# It's not supported yet because of possible regressions with forward and backward slashes.
 								echo 'ERR: recursive mode is not supported on Windows (yet). Recursive mode will be disabled!'
 								recursive=0
 							fi
@@ -179,7 +186,7 @@ then
 						"Linux TMSU")
 			        platform="tmsu"
 							command -v tmsu >/dev/null 2>&1 || { echo >&2 "This feature requires TMSU but it's not installed. Aborting."; exit 1; }
-							echo -e "\nDo not forget to tmsu init ~ if you haven't done it already!"
+							echo -e "\nDo not forget to tmsu init ~ if you haven't done so already!"
 			   			break
 		         ;;
 	        "Custom")
@@ -191,6 +198,7 @@ then
  done
 
   # set paths
+	# this is clunky, I know
  if [[ "$platform" == "windows" ]]; then
 	 echo 'Please use Linux paths for these settings (i.e. /mnt/c/path/to/whatever instead of C:\path\to\whatever)'
 	 while [ ! -d "$librarydir" ]; do read -p "Please enter full directory path to your library (without trailing slash): " librarydir ; done
@@ -222,7 +230,7 @@ then
 			echo sorteddir="$sorteddir" >> ./settings.cfg
 			if [[ "$platform" == "windows" ]]; then echo winlibrarydir='$winlibrarydir' >> ./settings.cfg ; fi
 			if [[ "$platform" == "windows" ]]; then echo winsorteddir='$winsorteddir' >> ./settings.cfg ; fi
-			if [[ "$platform" == "windows" ]]; then echo 'recursive=0' >> ./settings.cfg ; fi # recursive mode plug
+			if [[ "$platform" == "windows" ]]; then echo 'recursive=0' >> ./settings.cfg ; fi # plug, remove when recursive on Windows is fixed
 		fi
 	fi
 fi

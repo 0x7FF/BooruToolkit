@@ -22,4 +22,4 @@ File name: $fn
 File MD5: $md5
 Tag to be processed: $tag
 
-If user is using recursive mode, $fn is the full path to the file!
+WARNING: If you're using TagOrganizer in recursive mode, $fn becomes the full path to the file!
