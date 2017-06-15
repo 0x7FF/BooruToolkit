@@ -21,3 +21,5 @@ User-defined destination path: $sorteddir
 File name: $fn
 File MD5: $md5
 Tag to be processed: $tag
+
+WARNING: If you're using TagOrganizer in recursive mode, $fn becomes the full path to the file!
