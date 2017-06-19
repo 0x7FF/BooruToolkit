@@ -1,8 +1,23 @@
 #!/bin/bash
 
-# e621TagOrganizer, version 2.2
+# e621TagOrganizer, version 2.3
 # This application is licensed under MIT, read LICENSE for more information
 # Copyright 2017 Ray Volkov (hexl on e621)
+
+cd "${BASH_SOURCE%/*}" || exit
+if [[ "$1" == *"--update"* ]] || if [[ "$1" == *"--rescan"* ]]; then
+  echo -e "Usage: ./TagOrganizer.sh {argument}\n\n"
+  echo -e "   --update\n          apply tags only to new files"
+  echo -e "   --rescan\n          do a full re-tag of local library (DANGEROUS)"
+  echo -e "\nOnly the first argument will be evaluated."
+fi
+
+# Load extra functionality
+for file in extra/* ; do
+  if [ -f "$file" ] && [[ "$file" == *".sh" ]]; then
+    . "$file"
+  fi
+done
 
 set -e
 
@@ -12,12 +27,12 @@ sleeprate=0.4
 dbg=0
 recursive=0
 slow=0
-
+if [[ "$1" == *"--update"* ]] ; then update=1 ; fi
+if [[ "$1" == *"--rescan"* ]] ; then rescan=1 ; fi
 source ./settings.cfg >/dev/null 2>&1 || true
 
 # Methods
 function output_windows {
-	if [[ "$dbg" == "1" ]]; then echo "Debug: output_windows called"; fi
 	while read tag; do
 		ctag=${echo $tag | sed -e 's/[^A-Za-z0-9._-]/_/g'}
 		mkdir $sorteddir/"$ctag" 2>/dev/null || true
@@ -26,7 +41,6 @@ function output_windows {
 }
 
 function output_linux {
-	if [[ "$dbg" == "1" ]]; then echo "Debug: output_linux called"; fi
 	while read tag; do
 		ctag=$(echo $tag | sed -e 's/[^A-Za-z0-9._-]/_/g')
 		mkdir $sorteddir/"$ctag" 2>/dev/null || true
@@ -39,7 +53,6 @@ function output_linux {
 }
 
 function output_tmsu {
-	if [[ "$dbg" == "1" ]]; then echo "Debug: output_tmsu called"; fi
 	tags=$(xmllint --xpath "post/tags/text()" ./data/post/$md5.txt | recode html..UTF-8 | tr '/' '_'  | tr "\'" "_" | sed -e 's/[^A-Za-z0-9._ -()]/_/g' ) # "
 	if [[ "$recursive" == 0 ]]; then
 		tmsu tag --tags "$tags" $librarydir/"$fn" || true
@@ -52,7 +65,6 @@ function output_custom {
 	# this is a template that you can use to implement your own tagging method.
 	# for example tracker
 	# Please read MODIFY for more information.
-	if [[ "$dbg" == "1" ]]; then
 		echo -e "Debug: output_custom called \
 		\nlibrarydir=$librarydir
 		\nfn=$fn
@@ -62,17 +74,13 @@ function output_custom {
 	echo "[Simulated] Linking $librarydir/"$fn" to $sorteddir/"$ctag"/"$fn""
 }
 
-# Main function
 function proc {
-	if [[ "$dbg" == "1" ]]; then echo "Debug: proc called"; fi
-	if [[ "$slow" == "1" ]]; then sleep 1; fi
-	fn="$1" # fn - full name (image.jpg); in recursive mode this is the full path!
+	fn="$1" # fn - full name (image.jpg); in recursive mode this becomes the full path!
 	if [[ "$recursive" == 0 ]]; then
 		fn=`basename $1`
 	fi
 
 	# check if the filename is already an MD5
-	if [[ "$dbg" == "1" ]]; then echo "Debug: proc is checking MD5"; fi
 	if [[ "$fn" == "[a-f0-9]{32}"* ]]; then
 		md5=${fn:0:32}
 	else
@@ -83,10 +91,9 @@ function proc {
 		fi
 	fi
 
-	# check if we already have tags available, otherwise download them
+	# check if we already have tags cached, otherwise download them
 	if [ ! -f ./data/post/$md5-tags.txt ]; then
-		if [[ "$dbg" == "1" ]]; then echo "Debug: downloading tags"; fi
-		curl -A "TagOrganizer/2.2 (+https://e621.net/forum/show/233498)" -s "$baseurl/post/show.xml?md5=$md5" > ./data/post/$md5.txt
+		curl -A "TagOrganizer/2.3 (+https://e621.net/forum/show/233498)" -s "$baseurl/post/show.xml?md5=$md5" > ./data/post/$md5.txt
 		xmllint --xpath "post/tags/text()" ./data/post/$md5.txt | tr " " "\n" | recode html..UTF-8 > ./data/post/$md5-tags.txt #"
 		sleep $sleeprate # rate limiter
 	fi
@@ -103,11 +110,10 @@ function proc {
 	fi
 
 	echo "$fn" >> ./processed.txt
-	if [[ "$dbg" == "1" ]]; then echo "Debug: proc end"; fi
 }
 
-# Fuction to initialize folders
-function tagorginit {
+# Function to initialize folders
+function init {
 	# rm -rf ./data/ 2>/dev/null || true # we reuse the post info if full re-scan is started, only remove the folder if necessary
 	rm -f ./data/*.txt 2>/dev/null || true
 	mkdir ./data 2>/dev/null || true
@@ -117,50 +123,39 @@ function tagorginit {
 	fi
 }
 
-# License agreement
-function liccheck {
-	echo "[*] Reading license agreement..."
-	if [ -f ./LICENSE ]; then
-		cat ./LICENSE
-		echo
-		read -p "Do you accept the license agreement? [Y/n] " -n 1 -r
-		echo
-		if [[ $REPLY =~ ^[Yy]$ ]]
-		then
-			licenseaccepted=y
-			echo licenseaccepted="$licenseaccepted" >> ./settings.cfg
-		else
-			exit 1
-		fi
-	else
-		read -p "I couldn't find the LICENSE file, so we'll just assume that you've read it already. Press ENTER if you accept the license agreement or Ctrl+C if you don't."
-		licenseaccepted=y
-		echo licenseaccepted="$licenseaccepted" >> ./settings.cfg
-	fi
-}
-
 command_exists () {
     hash "$1" &> /dev/null ;
 }
-# functions end
+dependency_check () {
+    command -v $1 >/dev/null 2>&1 || { echo >&2 "I require $1 but it's not installed."; err=1; }
+}
 
 # Check for required software
-command -v curl >/dev/null 2>&1 || { echo >&2 "I require curl but it's not installed."; err=1; }
-command -v xmllint >/dev/null 2>&1 || { echo >&2 "I require xmllint but it's not installed."; err=1; }
-command -v diff >/dev/null 2>&1 || { echo >&2 "I require diff but it's not installed."; err=1; }
-command -v recode >/dev/null 2>&1 || { echo >&2 "I require recode but it's not installed."; err=1; }
-command -v md5sum >/dev/null 2>&1 || { echo >&2 "I require md5sum but it's not installed."; err=1; }
-command -v sed >/dev/null 2>&1 || { echo >&2 "I require sed but it's not installed."; err=1; }
-if [ "$err" == 1 ]; then echo "One or more dependencies are missing.  Aborting." && exit 1; fi
+dependency_check curl
+dependency_check xmllint
+dependency_check diff
+dependency_check recode
+dependency_check md5sum
+dependency_check sed
+dependency_check dialog
+if [ "$err" == 1 ]; then echo >&2 "One or more dependencies are missing.  Aborting." && exit 1; fi
 
 # Initialize folders, variables etc.
 echo "[*] Initializing..."
-tagorginit
+init
 
-# Display the license if it hasn't been read before
-if [ "$licenseaccepted" != y ]; then liccheck; fi
+if [ "$update" == "1" ] && [ "$cfg" != "1" ] ; then echo >2& "Please configure this script first by running without --update" && exit 1; fi
+if [ "$rescan" == "1" ] ; then >./processed.txt && echo '[*] Database cleared sucessfully, will do full rescan on next run.' fi
 
-# if no configuration found, ask user
+# Main menu
+echo -e "TagOrganizer\n\nWhat would you like to do?"
+for f in ./modules/*.sh; do
+    printf '%s\n' "${f%.sh}"
+done
+while [ ! -d "$CHOICE" ]; do read -p "Please enter full directory path to your library (without trailing slash): " CHOICE ; done
+# to-do: implement a menu
+
+# if no configuration found, perform first time setup
 if [ "$cfg" != "1" ]
 then
 	echo -e "No configuration found, running first-time setup.\n"
@@ -174,7 +169,7 @@ then
 	            platform="windows"
 							if [[ "$recursive" == 1 ]]; then
 								# It's not supported yet because of possible regressions with forward and backward slashes.
-								echo 'ERR: recursive mode is not supported on Windows (yet). Recursive mode will be disabled!'
+								echo 'Recursive mode is not supported on Windows (yet). Recursive mode will be disabled!'
 								recursive=0
 							fi
 							break
@@ -224,7 +219,7 @@ then
 		if [[ $REPLY =~ ^[Yy]$ ]]
 		then
 			cfg=1
-			echo cfg="$cfg" >> ./settings.cfg
+			echo cfg=1 >> ./settings.cfg
 			echo platform="$platform" >> ./settings.cfg
 			echo librarydir="$librarydir" >> ./settings.cfg
 			echo sorteddir="$sorteddir" >> ./settings.cfg
@@ -253,5 +248,4 @@ echo "Found `cat ./data/pending.txt | wc -l` new files"
 echo "[*] Processing files..."
 while read in; do proc "$in"; done < ./data/pending.txt
 
-tagorginit
 echo 'Program done!' && exit 0
