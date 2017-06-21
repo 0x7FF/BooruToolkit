@@ -1,5 +1,9 @@
-Thank you for taking interest in implementing your own methods!
-If you can, please submit them to this project's GitHub or forum thread so that other people can use them as well!
+Thank you for taking interest in improving this project!
+If you can, please submit your code to our GitHub or the forum thread.
+
+
+------
+This text may be outdated!
 
 Execution flow of TagOrganizer:
 1. Load custom settings, set variables and initialize folders
@@ -22,4 +26,4 @@ File name: $fn
 File MD5: $md5
 Tag to be processed: $tag
 
-WARNING: If you're using TagOrganizer in recursive mode, $fn becomes the full path to the file! If you're planning to contribute then please add a check for $recursive to handle it correctly (or at least exit with an error)
+WARNING: If you're using TagOrganizer in recursive mode then $fn becomes the full path to the file! If you're planning to contribute then please add a check for $recursive to handle it correctly (or at least exit with an error)

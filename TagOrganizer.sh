@@ -5,75 +5,29 @@
 # Copyright 2017 Ray Volkov (hexl on e621)
 
 cd "${BASH_SOURCE%/*}" || exit
-if [[ "$1" == *"--update"* ]] || if [[ "$1" == *"--rescan"* ]]; then
+if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]] || [[ "$1" == "-?" ]]; then
   echo -e "Usage: ./TagOrganizer.sh {argument}\n\n"
-  echo -e "   --update\n          apply tags only to new files"
+  echo -e "   --delete\n          delete a local file and properly untag it"
+  echo -e "   --update\n          skip all prompts and update new files"
   echo -e "   --rescan\n          do a full re-tag of local library (DANGEROUS)"
   echo -e "\nOnly the first argument will be evaluated."
 fi
 
-# Load extra functionality
-for file in extra/* ; do
-  if [ -f "$file" ] && [[ "$file" == *".sh" ]]; then
-    . "$file"
-  fi
-done
-
+echo "[*] Initializing..."
 set -e
 
 # DO NOT MODIFY THESE VALUES, USE settings.cfg INSTEAD
+VERSION=2.3
 baseurl="https://e621.net"
 sleeprate=0.4
 dbg=0
 recursive=0
 slow=0
-if [[ "$1" == *"--update"* ]] ; then update=1 ; fi
-if [[ "$1" == *"--rescan"* ]] ; then rescan=1 ; fi
+if [[ "$1" == "--update"* ]] ; then update=1 ; fi
+if [[ "$1" == "--rescan"* ]] ; then rescan=1 ; fi
 source ./settings.cfg >/dev/null 2>&1 || true
 
-# Methods
-function output_windows {
-	while read tag; do
-		ctag=${echo $tag | sed -e 's/[^A-Za-z0-9._-]/_/g'}
-		mkdir $sorteddir/"$ctag" 2>/dev/null || true
-		echo 'mklink' "$winsorteddir"'\'"$ctag"'\'"$fn" "$winlibrarydir"'\'"$fn" >> ./hardlink.bat
-	done < ./data/post/$md5-tags.txt
-}
-
-function output_linux {
-	while read tag; do
-		ctag=$(echo $tag | sed -e 's/[^A-Za-z0-9._-]/_/g')
-		mkdir $sorteddir/"$ctag" 2>/dev/null || true
-		if [[ "$recursive" == 0 ]]; then
-			ln -s $librarydir/"$fn" $sorteddir/"$ctag"/"$fn" > /dev/null || true
-		else
-			ln -s "$fn" $sorteddir/"$ctag"/"$fn" > /dev/null || true
-		fi
-	done < ./data/post/$md5-tags.txt
-}
-
-function output_tmsu {
-	tags=$(xmllint --xpath "post/tags/text()" ./data/post/$md5.txt | recode html..UTF-8 | tr '/' '_'  | tr "\'" "_" | sed -e 's/[^A-Za-z0-9._ -()]/_/g' ) # "
-	if [[ "$recursive" == 0 ]]; then
-		tmsu tag --tags "$tags" $librarydir/"$fn" || true
-	else
-		tmsu tag --tags "$tags" "$fn" || true
-	fi
-}
-
-function output_custom {
-	# this is a template that you can use to implement your own tagging method.
-	# for example tracker
-	# Please read MODIFY for more information.
-		echo -e "Debug: output_custom called \
-		\nlibrarydir=$librarydir
-		\nfn=$fn
-		sorteddir=$sorteddir
-		\nctag=$ctag"
-	fi
-	echo "[Simulated] Linking $librarydir/"$fn" to $sorteddir/"$ctag"/"$fn""
-}
-
+# Functions
 function proc {
 	fn="$1" # fn - full name (image.jpg); in recursive mode this becomes the full path!
 	if [[ "$recursive" == 0 ]]; then
@@ -92,21 +46,18 @@ function proc {
 	fi
 
 	# check if we already have tags cached, otherwise download them
-	if [ ! -f ./data/post/$md5-tags.txt ]; then
-		curl -A "TagOrganizer/2.3 (+https://e621.net/forum/show/233498)" -s "$baseurl/post/show.xml?md5=$md5" > ./data/post/$md5.txt
-		xmllint --xpath "post/tags/text()" ./data/post/$md5.txt | tr " " "\n" | recode html..UTF-8 > ./data/post/$md5-tags.txt #"
-		sleep $sleeprate # rate limiter
-	fi
+  # fun fact: you can use other imageboards by overriding this function
+  download $md5
+
+  # extract tags from the file. can be disabled if you don't need this functionality
+  if [[ "$no_tags" != 1 ]]; then xmllint --xpath "post/tags/text()" ./data/post/$md5.txt | tr " " "\n" | recode html..UTF-8 > ./data/post/$md5-tags.txt ; fi #"
 
 	# final step: actually sort the files
 	if [ -s ./data/post/$md5-tags.txt ]; then
-		if [[ "$platform" == "linux" ]]; then output_linux; fi
-		if [[ "$platform" == "windows" ]]; then output_windows; fi
-		if [[ "$platform" == "tmsu" ]]; then output_tmsu; fi
-		if [[ "$platform" == "custom" ]]; then output_custom; fi
+		output_$platform
 		echo "$fn"
 	else
-		echo "$fn did not return any tags, moving on..."
+		echo >&2 "$fn did not return any tags, moving on..."
 	fi
 
 	echo "$fn" >> ./processed.txt
@@ -123,12 +74,34 @@ function init {
 	fi
 }
 
+function rescan {
+  >./processed.txt
+  echo '[*] Database cleared sucessfully.'
+}
+
 command_exists () {
     hash "$1" &> /dev/null ;
 }
 dependency_check () {
+  if [[ $2 == "important" ]]; then
+    command -v $1 >/dev/null 2>&1 || { echo >&2 "This feature requires $1 but it's not installed. Aborting."; exit 1; }
+  else
     command -v $1 >/dev/null 2>&1 || { echo >&2 "I require $1 but it's not installed."; err=1; }
+  fi
 }
+
+# Load extra functionality
+for file in modules/* ; do
+  if [ -f "$file" ] && [[ "$file" == *".sh" ]]; then
+    . "$file"
+    echo "[+] $file module loaded"
+  fi
+done
+
+if [[ "$1" == "--delete" ]]; then
+  if [ "$cfg" != "1" ] ; then echo >&2 "Please configure this script first by running without --delete" && exit 1; fi
+  output_$platform --delete "$2"
+fi
 
 # Check for required software
 dependency_check curl
@@ -137,64 +110,33 @@ dependency_check diff
 dependency_check recode
 dependency_check md5sum
 dependency_check sed
-dependency_check dialog
 if [ "$err" == 1 ]; then echo >&2 "One or more dependencies are missing.  Aborting." && exit 1; fi
 
-# Initialize folders, variables etc.
-echo "[*] Initializing..."
 init
+if [ "$update" == "1" ] && [ "$cfg" != "1" ] ; then echo >&2 "Please configure this script first by running without --update" && exit 1; fi
+if [ "$rescan" == "1" ] ; then rescan ; fi
 
-if [ "$update" == "1" ] && [ "$cfg" != "1" ] ; then echo >2& "Please configure this script first by running without --update" && exit 1; fi
-if [ "$rescan" == "1" ] ; then >./processed.txt && echo '[*] Database cleared sucessfully, will do full rescan on next run.' fi
+# main menu
+if [[ "$update" != 1 ]]; then
+  echo
+  echo 'How would you like to tag your files?'
+  echo -e "\n$options"
+  read -p "Your choice: " platform
+fi
 
-# Main menu
-echo -e "TagOrganizer\n\nWhat would you like to do?"
-for f in ./modules/*.sh; do
-    printf '%s\n' "${f%.sh}"
-done
-while [ ! -d "$CHOICE" ]; do read -p "Please enter full directory path to your library (without trailing slash): " CHOICE ; done
-# to-do: implement a menu
+echo -e "\nYour settings are:\nPlatform=$platform\nLibrary path=$librarydir\nSorted path=$sorteddir"
+if [[ "$platform" == "windows"* ]]; then echo -e ""Windows library path="'$winlibrarydir'\n"Windows sorted path="'$winsorteddir'" ; fi
+echo && read -p "Do you wish to change these settings? [y/N] " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then cfg=0 ; fi
 
 # if no configuration found, perform first time setup
-if [ "$cfg" != "1" ]
-then
-	echo -e "No configuration found, running first-time setup.\n"
-
-	PS3='How would you like to tag your files? '
-	options=("Windows mklink" "Linux ln" "Linux TMSU" "Custom")
-	select opt in "${options[@]}"
-	do
-	    case $opt in
-	        "Windows mklink")
-	            platform="windows"
-							if [[ "$recursive" == 1 ]]; then
-								# It's not supported yet because of possible regressions with forward and backward slashes.
-								echo 'Recursive mode is not supported on Windows (yet). Recursive mode will be disabled!'
-								recursive=0
-							fi
-							break
-	            ;;
-	        "Linux ln")
-	            platform="linux"
-							break
-	            ;;
-						"Linux TMSU")
-			        platform="tmsu"
-							command -v tmsu >/dev/null 2>&1 || { echo >&2 "This feature requires TMSU but it's not installed. Aborting."; exit 1; }
-							echo -e "\nDo not forget to tmsu init ~ if you haven't done so already!"
-			   			break
-		         ;;
-	        "Custom")
-	            platform="custom"
-							break
-	            ;;
-	        *) echo invalid option;;
-	    esac
- done
+if [ "$cfg" != "1" ]; then
+	echo "No configuration found, running first-time setup."
 
   # set paths
 	# this is clunky, I know
- if [[ "$platform" == "windows" ]]; then
+ if [[ "$platform" == "windows"* ]]; then
 	 echo 'Please use Linux paths for these settings (i.e. /mnt/c/path/to/whatever instead of C:\path\to\whatever)'
 	 while [ ! -d "$librarydir" ]; do read -p "Please enter full directory path to your library (without trailing slash): " librarydir ; done
 	 while [ ! -d "$sorteddir" ]; do read -p "Please enter full directory path where I should save SORTED files (without trailing slash): " sorteddir ; done
@@ -204,28 +146,27 @@ then
  else
 	  if command_exists zenity ; then
 			librarydir=$(zenity --file-selection --directory --title="Choose your library directory" 2> /dev/null)
-			if [[ "$platform" != "tmsu" ]]; then sorteddir=$(zenity --file-selection --directory --title="Choose where to save sorted files" 2> /dev/null); fi
+			if [[ "$platform" != "tmsu"* ]]; then sorteddir=$(zenity --file-selection --directory --title="Choose where to save sorted files" 2> /dev/null); fi
 		else
 			while [ ! -d "$librarydir" ]; do read -p "Please enter full directory path to your library (without trailing slash): " librarydir ; done
-			if [[ "$platform" != "tmsu" ]]; then
+			if [[ "$platform" != "tmsu"* ]]; then
 				while [ ! -d "$sorteddir" ]; do read -p "Please enter full directory path where I should save SORTED files (without trailing slash): " sorteddir ; done
 			fi
 		fi
 
+    cfg=1
 		echo -e "\nYour settings:\nPlatform=$platform\nLibrary path=$librarydir\nSorted path=$sorteddir"
-		if [[ "$platform" == "windows" ]]; then echo -e ""Windows library path="'$winlibrarydir'\n"Windows sorted path="'$winsorteddir'" ; fi
+		if [[ "$platform" == "windows"* ]]; then echo -e ""Windows library path="'$winlibrarydir'\n"Windows sorted path="'$winsorteddir'" ; fi
 		echo && read -p "Do you wish to save these settings? [Y/n] " -n 1 -r
 		echo
 		if [[ $REPLY =~ ^[Yy]$ ]]
 		then
-			cfg=1
 			echo cfg=1 >> ./settings.cfg
 			echo platform="$platform" >> ./settings.cfg
 			echo librarydir="$librarydir" >> ./settings.cfg
 			echo sorteddir="$sorteddir" >> ./settings.cfg
-			if [[ "$platform" == "windows" ]]; then echo winlibrarydir='$winlibrarydir' >> ./settings.cfg ; fi
-			if [[ "$platform" == "windows" ]]; then echo winsorteddir='$winsorteddir' >> ./settings.cfg ; fi
-			if [[ "$platform" == "windows" ]]; then echo 'recursive=0' >> ./settings.cfg ; fi # plug, remove when recursive on Windows is fixed
+			if [[ "$platform" == "windows"* ]]; then echo winlibrarydir='$winlibrarydir' >> ./settings.cfg ; fi
+			if [[ "$platform" == "windows"* ]]; then echo winsorteddir='$winsorteddir' >> ./settings.cfg ; fi
 		fi
 	fi
 fi
