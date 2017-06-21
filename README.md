@@ -41,7 +41,6 @@ Please consult MODIFY for instructions on creating your own methods.
 
 ## Known bugs
 
-- [ ] File deletion isn't handled yet, expect dead links in your tag folders if you delete an image.
 - [ ] Recursive mode is not supported on Windows yet.
 
 ## License
