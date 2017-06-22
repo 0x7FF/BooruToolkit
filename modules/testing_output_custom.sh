@@ -2,10 +2,7 @@
 # This is a template that you can use to implement your own tagging method.
 # Please read MODIFY for more information.
 
-# if you want your module to act as a "platform" then you'll have to set up variables as shown below
-options+="custom - template (for testing)\n" # add yourself to the menu
-# rescan=1 # set to 1 if you want to trigger a full rescan
-# no_tags=1 # set to 1 to disable outputting tags from downloaded post info (i.e. you don't need tagging functionality)
+options+="custom - template (for testing)\n" # add yourself to the menu if required
 
 # if you need to check for a dependency then use the built-in function dependency_check.
 # it will check if your command fails and either notify the user or exit immediately if second argument is set to 'important'
@@ -18,6 +15,13 @@ function output_custom {
 	# you may implement a --delete option in your module. Only works if user chose to save the configuration
 	if [[ "$1" == "--delete" ]]; then
 		 echo "Removing $2"
+	fi
+
+	# you may also implement an --init function to run something as soon as user chooses your module
+	if [[ "$1" == "--init" ]]; then
+		 #database=""./testprocessed.txt" # you can override the database file to store files processed by your modules separately!
+		 # no_tags=0 # set to 1 to disable all tagging functionality
+		 echo "Initialized!"
 	fi
 
 	echo -e "librarydir=$librarydir\nfn=$fn\nsorteddir=$sorteddir"

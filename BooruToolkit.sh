@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# e621TagOrganizer, version 2.3
+# BooruToolkit, version 2.3
 # This application is licensed under MIT, read LICENSE for more information
 # Copyright 2017 Ray Volkov (hexl on e621)
 
 cd "${BASH_SOURCE%/*}" || exit
 if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]] || [[ "$1" == "-?" ]]; then
-  echo -e "Usage: ./TagOrganizer.sh {argument}\n\n"
+  echo -e "Usage: ./BooruToolkit.sh {argument}\n\n"
   echo -e "   --delete\n          delete a local file and properly untag it"
   echo -e "   --update\n          skip all prompts and update new files"
   echo -e "   --rescan\n          do a full re-tag of local library (DANGEROUS)"
@@ -19,15 +19,22 @@ set -e
 # DO NOT MODIFY THESE VALUES, USE settings.cfg INSTEAD
 VERSION=2.3
 baseurl="https://e621.net"
+database="processed.txt"
 sleeprate=0.4
-dbg=0
 recursive=0
-slow=0
+no_tags=0
 if [[ "$1" == "--update"* ]] ; then update=1 ; fi
 if [[ "$1" == "--rescan"* ]] ; then rescan=1 ; fi
 source ./settings.cfg >/dev/null 2>&1 || true
 
 # Functions
+function xmllint-compat {
+  if [[ "$2" == tags ]]; then
+    xmllint --xpath "post/tags/text()" ./data/post/$1.txt | tr " " "\n" | recode html..UTF-8 > ./data/post/$1-tags.txt #"
+  else
+    xmllint --xpath "post/$2/text()" ./data/post/$1.txt | recode html..UTF-8 #"
+}
+
 function proc {
 	fn="$1" # fn - full name (image.jpg); in recursive mode this becomes the full path!
 	if [[ "$recursive" == 0 ]]; then
@@ -49,18 +56,24 @@ function proc {
   # fun fact: you can use other imageboards by overriding this function
   download $md5
 
-  # extract tags from the file. can be disabled if you don't need this functionality
-  if [[ "$no_tags" != 1 ]]; then xmllint --xpath "post/tags/text()" ./data/post/$md5.txt | tr " " "\n" | recode html..UTF-8 > ./data/post/$md5-tags.txt ; fi #"
+  # extract metadata from the file
+  # takes an MD5 and what to extract (tags,id,whatever) as arguments
+  xmllint-compat $md5
 
 	# final step: actually sort the files
-	if [ -s ./data/post/$md5-tags.txt ]; then
-		output_$platform
-		echo "$fn"
-	else
-		echo >&2 "$fn did not return any tags, moving on..."
-	fi
+  if [[ "$no_tags" != 1 ]]; then
+  	if [ -s ./data/post/$md5-tags.txt ]; then
+  		output_$platform
+  		echo "$fn"
+  	else
+  		echo >&2 "$fn did not return any tags, moving on..."
+  	fi
+  else
+    output_$platform
+    echo "$fn"
+  fi
 
-	echo "$fn" >> ./processed.txt
+	echo "$fn" >> ./$database
 }
 
 # Function to initialize folders
@@ -69,13 +82,10 @@ function init {
 	rm -f ./data/*.txt 2>/dev/null || true
 	mkdir ./data 2>/dev/null || true
 	mkdir ./data/post 2>/dev/null || true
-	if [ ! -f ./processed.txt ]; then
-		>./processed.txt
-	fi
 }
 
 function rescan {
-  >./processed.txt
+  >./$database
   echo '[*] Database cleared sucessfully.'
 }
 
@@ -100,7 +110,7 @@ done
 
 if [[ "$1" == "--delete" ]]; then
   if [ "$cfg" != "1" ] ; then echo >&2 "Please configure this script first by running without --delete" && exit 1; fi
-  output_$platform --delete "$2"
+  output_$platform --delete "$2" || true
 fi
 
 # Check for required software
@@ -122,18 +132,18 @@ if [[ "$update" != 1 ]]; then
   echo 'How would you like to tag your files?'
   echo -e "\n$options"
   read -p "Your choice: " platform
-fi
 
-echo -e "\nYour settings are:\nPlatform=$platform\nLibrary path=$librarydir\nSorted path=$sorteddir"
-if [[ "$platform" == "windows"* ]]; then echo -e ""Windows library path="'$winlibrarydir'\n"Windows sorted path="'$winsorteddir'" ; fi
-echo && read -p "Do you wish to change these settings? [y/N] " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then cfg=0 ; fi
+  if [ "$cfg" == "1" ]; then
+    echo -e "\nYour settings are:\nPlatform=$platform\nLibrary path=$librarydir\nSorted path=$sorteddir"
+    if [[ "$platform" == "windows"* ]]; then echo -e ""Windows library path="'$winlibrarydir'\n"Windows sorted path="'$winsorteddir'" ; fi
+    echo && read -p "Do you wish to change these settings? [y/N] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then cfg=0 ; fi
+  fi
+fi
 
 # if no configuration found, perform first time setup
 if [ "$cfg" != "1" ]; then
-	echo "No configuration found, running first-time setup."
-
   # set paths
 	# this is clunky, I know
  if [[ "$platform" == "windows"* ]]; then
@@ -171,7 +181,10 @@ if [ "$cfg" != "1" ]; then
 	fi
 fi
 
-cp ./processed.txt ./processed.txt.backup || true # backup processed file list in case something goes wrong
+# let modules do initial setup if they need to
+output_$platform --init || true
+
+cp ./$database ./$database.backup || true # backup processed file list in case something goes wrong
 if [[ "$recursive" == 0 ]]; then
 	find $librarydir -maxdepth 1 -type f > ./data/all.txt
 else
@@ -180,7 +193,7 @@ fi
 
 # Sort files and prep them for diff
 echo "[*] Sorting file lists..."
-sort -u -o ./data/processed_s.txt ./processed.txt
+sort -u -o ./data/processed_s.txt ./$database
 sort -u -o ./data/all_s.txt ./data/all.txt
 echo "[*] Searching for new files to tag..."
 diff -u ./data/processed_s.txt ./data/all_s.txt | grep -E "^\+" | grep -v "/data" | cut -c 2- > ./data/pending.txt

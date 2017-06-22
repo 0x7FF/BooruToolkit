@@ -1,20 +1,17 @@
 # e621TagOrganizer
 #### modular e621 library organizer written in Bash
+#### version 2.3
 
 This is a bash script that I wrote to organize my local e621 library. I needed something that was extension-agnostic, lightweight and easy to modify, and thus TagOrganizer was born.
-
-Out of the box this app supports Windows 10 (using Bash on Windows) and Linux, but you can easily modify it to support anything else, for example MacOS or third-party tagging software.
-
-If that's not enough for you, this script is incredibly easy to extend upon.
 
 [Forum thread on e621](https://e621.net/forum/show/233498)
 
 ## Features
-* Can be used with e926.net to avoid filters.
-* Easily add your own functions that can do literally anything.
-* Everything is broken into functions, code is easy to read and understand.
-* Soft-link tagging is zero-maintenance and doesn't require extra software.
-* Doesn't touch the original files, no backups required.
+* Download metadata from e621 (URL can be changed to e926.net to avoid filters)
+* Tag files using Windows softlinks
+* Tag files using Linux softlinks
+* Tag files using TMSU
+* Upload local library to e621 favorites and/or upvoted list
 
 ## Installation
 
