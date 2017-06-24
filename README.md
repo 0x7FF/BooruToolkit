@@ -1,6 +1,7 @@
 # e621TagOrganizer
 #### modular e621 library organizer written in Bash
 
+### *WARNING!* This is a deprecated version of BooruToolkit.
 
 This is a bash script that I wrote to organize my local e621 library. I needed something that was extension-agnostic, lightweight and easy to modify, and thus TagOrganizer was born.
 
