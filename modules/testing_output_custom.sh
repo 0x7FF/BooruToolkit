@@ -15,13 +15,16 @@ function output_custom {
 	# you may implement a --delete option in your module. Only works if user chose to save the configuration
 	if [[ "$1" == "--delete" ]]; then
 		 echo "Removing $2"
+		 exit
 	fi
 
 	# you may also implement an --init function to run something as soon as user chooses your module
 	if [[ "$1" == "--init" ]]; then
 		 #database=""./testprocessed.txt" # you can override the database file to store files processed by your modules separately!
 		 # no_tags=0 # set to 1 to disable all tagging functionality
-		 echo "Initialized!"
+		 # no_sort=0 # set to 1 to disable building a list of files to be processed
+		 # echo "Initialized!"
+		 return 0 # this is important, module will continue running through the code otherwise!
 	fi
 
 	echo -e "librarydir=$librarydir\nfn=$fn\nsorteddir=$sorteddir"

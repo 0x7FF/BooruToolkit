@@ -3,10 +3,19 @@
 options+="tmsu - Linux TMSU\n"
 
 function output_tmsu {
-	dependency_check tmsu important
+	if [[ "$1" == "--selected" ]]; then
+		 dependency_check tmsu important
+		 return 0
+	fi
+
+	if [[ "$1" == "--init" ]]; then
+		 true
+	fi
 
 	if [[ "$1" == "--delete" ]]; then
 		 tmsu-fs-rm "$2"
+		 echo "$2 deleted and untagged successfully."
+		 exit 0
 	fi
 
 	if [ "$cfg" == "1" ]; then

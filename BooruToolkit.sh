@@ -9,8 +9,8 @@ if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]] || [[ "$1" == "-?" ]]; then
   echo -e "Usage: ./BooruToolkit.sh {argument}\n\n"
   echo -e "   --delete\n          delete a local file and properly untag it"
   echo -e "   --update\n          skip all prompts and update new files"
-  echo -e "   --rescan\n          do a full re-tag of local library (DANGEROUS)"
-  echo -e "\nOnly the first argument will be evaluated."
+  echo -e "   --rescan\n          do a full re-tag of local library (CAUTION)\n"
+  exit 0
 fi
 
 echo "[*] Initializing..."
@@ -23,20 +23,31 @@ database="processed.txt"
 sleeprate=0.4
 recursive=0
 no_tags=0
-if [[ "$1" == "--update"* ]] ; then update=1 ; fi
-if [[ "$1" == "--rescan"* ]] ; then rescan=1 ; fi
+dbg=0
+if [[ "$1" == "--update" ]]; then update=1 ; fi
 source ./settings.cfg >/dev/null 2>&1 || true
 
 # Functions
 function xmllint-compat {
-  if [[ "$2" == tags ]]; then
+  if [[ "$2" == "tags" ]]; then
     xmllint --xpath "post/tags/text()" ./data/post/$1.txt | tr " " "\n" | recode html..UTF-8 > ./data/post/$1-tags.txt #"
   else
     xmllint --xpath "post/$2/text()" ./data/post/$1.txt | recode html..UTF-8 #"
+  fi
+}
+
+function sort_files {
+  echo "[*] Sorting file lists..."
+  sort -u -o ./data/processed_s.txt ./$database
+  sort -u -o ./data/all_s.txt ./data/all.txt
+  echo "[*] Searching for new files..."
+  diff -u ./data/processed_s.txt ./data/all_s.txt | grep -E "^\+" | grep -v '+ ./data' | grep -v "(standard input)" | cut -c 2- > ./data/pending.txt
+  echo "Found `cat ./data/pending.txt | wc -l` new files"
 }
 
 function proc {
 	fn="$1" # fn - full name (image.jpg); in recursive mode this becomes the full path!
+  if [[ "$dbg" == "1" ]]; then echo "DEBUG: proc started"; fi
 	if [[ "$recursive" == 0 ]]; then
 		fn=`basename $1`
 	fi
@@ -58,18 +69,18 @@ function proc {
 
   # extract metadata from the file
   # takes an MD5 and what to extract (tags,id,whatever) as arguments
-  xmllint-compat $md5
+  xmllint-compat $md5 tags
 
 	# final step: actually sort the files
   if [[ "$no_tags" != 1 ]]; then
   	if [ -s ./data/post/$md5-tags.txt ]; then
-  		output_$platform
+  		output_$platform $md5 $fn
   		echo "$fn"
   	else
   		echo >&2 "$fn did not return any tags, moving on..."
   	fi
   else
-    output_$platform
+    output_$platform $md5 $fn
     echo "$fn"
   fi
 
@@ -77,11 +88,12 @@ function proc {
 }
 
 # Function to initialize folders
-function init {
+function btinit {
 	# rm -rf ./data/ 2>/dev/null || true # we reuse the post info if full re-scan is started, only remove the folder if necessary
 	rm -f ./data/*.txt 2>/dev/null || true
 	mkdir ./data 2>/dev/null || true
 	mkdir ./data/post 2>/dev/null || true
+  if [ ! -f ./$database ]; then >./$database ; fi
 }
 
 function rescan {
@@ -92,6 +104,7 @@ function rescan {
 command_exists () {
     hash "$1" &> /dev/null ;
 }
+
 dependency_check () {
   if [[ $2 == "important" ]]; then
     command -v $1 >/dev/null 2>&1 || { echo >&2 "This feature requires $1 but it's not installed. Aborting."; exit 1; }
@@ -122,12 +135,12 @@ dependency_check md5sum
 dependency_check sed
 if [ "$err" == 1 ]; then echo >&2 "One or more dependencies are missing.  Aborting." && exit 1; fi
 
-init
-if [ "$update" == "1" ] && [ "$cfg" != "1" ] ; then echo >&2 "Please configure this script first by running without --update" && exit 1; fi
-if [ "$rescan" == "1" ] ; then rescan ; fi
+btinit
+if [ "$1" == "--update" ] && [ "$cfg" != "1" ] ; then echo >&2 "Please configure this script first by running without --update" && exit 1; fi
+if [ "$1" == "--rescan" ] ; then rescan ; fi
 
 # main menu
-if [[ "$update" != 1 ]]; then
+if [[ "$1" != "--update" ]]; then
   echo
   echo 'How would you like to tag your files?'
   echo -e "\n$options"
@@ -138,14 +151,17 @@ if [[ "$update" != 1 ]]; then
     if [[ "$platform" == "windows"* ]]; then echo -e ""Windows library path="'$winlibrarydir'\n"Windows sorted path="'$winsorteddir'" ; fi
     echo && read -p "Do you wish to change these settings? [y/N] " -n 1 -r
     echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then cfg=0 ; fi
+    if [[ $REPLY =~ ^[Yy]$ ]]; then cfg=0 ; librarydir= ; fi
   fi
 fi
+
+# in case you need to disable configurator you can set cfg=1 at this step
+output_$platform --selected || true
 
 # if no configuration found, perform first time setup
 if [ "$cfg" != "1" ]; then
   # set paths
-	# this is clunky, I know
+	# note to self: file picker should be a function
  if [[ "$platform" == "windows"* ]]; then
 	 echo 'Please use Linux paths for these settings (i.e. /mnt/c/path/to/whatever instead of C:\path\to\whatever)'
 	 while [ ! -d "$librarydir" ]; do read -p "Please enter full directory path to your library (without trailing slash): " librarydir ; done
@@ -182,24 +198,30 @@ if [ "$cfg" != "1" ]; then
 fi
 
 # let modules do initial setup if they need to
-output_$platform --init || true
-
-cp ./$database ./$database.backup || true # backup processed file list in case something goes wrong
-if [[ "$recursive" == 0 ]]; then
-	find $librarydir -maxdepth 1 -type f > ./data/all.txt
+if [[ "$1" == "--update" ]]; then
+  output_$platform --init --update || true
 else
-	find $librarydir -type f > ./data/all.txt
+  output_$platform --init || true
 fi
 
-# Sort files and prep them for diff
-echo "[*] Sorting file lists..."
-sort -u -o ./data/processed_s.txt ./$database
-sort -u -o ./data/all_s.txt ./data/all.txt
-echo "[*] Searching for new files to tag..."
-diff -u ./data/processed_s.txt ./data/all_s.txt | grep -E "^\+" | grep -v "/data" | cut -c 2- > ./data/pending.txt
-echo "Found `cat ./data/pending.txt | wc -l` new files"
+if [[ "$no_sort" != 1 ]]; then
+  cp ./$database ./$database.backup || true # backup processed file list in case something goes wrong
+  if [[ "$recursive" == 0 ]]; then
+  	find $librarydir -maxdepth 1 -type f > ./data/all.txt
+  else
+  	find $librarydir -type f > ./data/all.txt
+  fi
 
-echo "[*] Processing files..."
-while read in; do proc "$in"; done < ./data/pending.txt
+  # Sort files and prep them for diff
+  sort_files
+fi
 
-echo 'Program done!' && exit 0
+if [[ "$no_tags" != 1 ]]; then
+  echo "[*] Processing files..."
+  while read in; do proc "$in"; done < ./data/pending.txt
+else
+  output_$platform
+fi
+
+echo 'Program done!'
+exit 0

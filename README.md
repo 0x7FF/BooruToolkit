@@ -1,4 +1,4 @@
-# e621TagOrganizer
+# BooruToolkit
 #### modular e621 library organizer written in Bash
 #### version 2.3
 
@@ -12,6 +12,13 @@ This is a bash script that I wrote to organize my local e621 library. I needed s
 * Tag files using Linux softlinks
 * Tag files using TMSU
 * Upload local library to e621 favorites and/or upvoted list
+* Download new images from specified queries
+
+## Dependencies
+* libxml2-utils
+* curl
+* recode
+* sed
 
 ## Installation
 
@@ -42,4 +49,4 @@ Please consult MODIFY for instructions on creating your own methods.
 
 ## License
 
-TagOrganizer uses MIT license, for more information please consult LICENSE.
+BooruToolkit (TagOrganizer) uses MIT license, for more information please consult LICENSE.
