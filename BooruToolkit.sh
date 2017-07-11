@@ -145,40 +145,32 @@ if [[ "$1" != "--update" ]]; then
   echo 'How would you like to tag your files?'
   echo -e "\n$options"
   read -p "Your choice: " platform
-
-  if [ "$cfg" == "1" ]; then
-    echo -e "\nYour settings are:\nPlatform=$platform\nLibrary path=$librarydir\nSorted path=$sorteddir"
-    if [[ "$platform" == "windows"* ]]; then echo -e ""Windows library path="'$winlibrarydir'\n"Windows sorted path="'$winsorteddir'" ; fi
-    echo && read -p "Do you wish to change these settings? [y/N] " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then cfg=0 ; librarydir= ; fi
-  fi
 fi
 
 # in case you need to disable configurator you can set cfg=1 at this step
-output_$platform --selected || true
+if [[ "$1" == "--update" ]]; then
+  output_$platform --select --update || true
+else
+  output_$platform --select || true
+fi
 
 # if no configuration found, perform first time setup
 if [ "$cfg" != "1" ]; then
-  # set paths
-	# note to self: file picker should be a function
- if [[ "$platform" == "windows"* ]]; then
-	 echo 'Please use Linux paths for these settings (i.e. /mnt/c/path/to/whatever instead of C:\path\to\whatever)'
-	 while [ ! -d "$librarydir" ]; do read -p "Please enter full directory path to your library (without trailing slash): " librarydir ; done
-	 while [ ! -d "$sorteddir" ]; do read -p "Please enter full directory path where I should save SORTED files (without trailing slash): " sorteddir ; done
-	 echo -e '\nNow use Windows paths for these settings (i.e. C:\path\to\whatever)'
-	 while [ ! -d "$winlibrarydir" ]; do read -p "Please enter full directory path to your library (without trailing slash): " winlibrarydir ; done
-	 while [ ! -d "$winsorteddir" ]; do read -p "Please enter full directory path where I should save SORTED files (without trailing slash): " winsorteddir ; done
- else
-	  if command_exists zenity ; then
-			librarydir=$(zenity --file-selection --directory --title="Choose your library directory" 2> /dev/null)
-			if [[ "$platform" != "tmsu"* ]]; then sorteddir=$(zenity --file-selection --directory --title="Choose where to save sorted files" 2> /dev/null); fi
-		else
-			while [ ! -d "$librarydir" ]; do read -p "Please enter full directory path to your library (without trailing slash): " librarydir ; done
-			if [[ "$platform" != "tmsu"* ]]; then
-				while [ ! -d "$sorteddir" ]; do read -p "Please enter full directory path where I should save SORTED files (without trailing slash): " sorteddir ; done
-			fi
-		fi
+    # set paths
+    if [[ "$platform" == "windows"* ]]; then
+      echo 'Use Linux paths for these settings (i.e. /mnt/c/path/to/whatever instead of C:\path\to\whatever)'
+      while [ ! -d "$librarydir" ]; do read -p "full directory path to your library (without trailing slash): " librarydir ; done
+      while [ ! -d "$sorteddir" ]; do read -p "full directory path where to save SORTED files (without trailing slash): " sorteddir ; done
+      echo -e '\nNow use Windows paths for these settings (i.e. C:\path\to\whatever)'
+      while [ ! -d "$winlibrarydir" ]; do read -p "full directory path to your library (without trailing slash): " winlibrarydir ; done
+      while [ ! -d "$winsorteddir" ]; do read -p "full directory path where to save SORTED files (without trailing slash): " winsorteddir ; done
+    else
+      if command_exists zenity ; then
+        librarydir=$(zenity --file-selection --directory --title="Choose path to your library" 2> /dev/null)
+      else
+        while [ ! -d "$librarydir" ]; do read -p "Please enter full directory path to your library (without trailing slash): " librarydir ; done
+      fi
+    fi
 
     cfg=1
 		echo -e "\nYour settings:\nPlatform=$platform\nLibrary path=$librarydir\nSorted path=$sorteddir"

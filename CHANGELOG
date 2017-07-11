@@ -1,7 +1,7 @@
 # BooruToolkit 2.3
 Big update! Project has been renamed to BooruToolkit because I feel like it's no longer exclusive to e621
-You can now upload your local files to e621 favorites
-As well as use BT as an RSS reader and download new images for your queries (beta)
+You can now upload your local files to e621 favorites (as well as upvote them)
+Use BT as an RSS reader and download new images for your queries (beta)
 Full modularity achieved
 Removed license check
 Many code improvements and many bugs squashed
