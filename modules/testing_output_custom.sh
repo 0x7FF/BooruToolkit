@@ -18,9 +18,14 @@ function output_custom {
 		 exit
 	fi
 
+	# this will run before the configurator and right after user selects your module
+	if [[ "$1" == "--selected" ]]; then
+		 return 0
+	fi
+
 	# you may also implement an --init function to run something as soon as user chooses your module
 	if [[ "$1" == "--init" ]]; then
-		 #database=""./testprocessed.txt" # you can override the database file to store files processed by your modules separately!
+		 #database=""./testprocessed.txt" # you can override the database file to store files processed by your module separately!
 		 # no_tags=0 # set to 1 to disable all tagging functionality
 		 # no_sort=0 # set to 1 to disable building a list of files to be processed
 		 # echo "Initialized!"

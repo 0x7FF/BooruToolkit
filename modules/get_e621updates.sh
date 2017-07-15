@@ -8,13 +8,13 @@ function sort_files2 {
 	while [[ $query != 0 ]]; do
 		xmllint --xpath '//post/file_url/text()' ./data/query$query.txt >> ./data/all.txt #'
 		if [[ "$baseurl" == *https* ]]; then
-			sed -i 's/https/\nhttps/g' ./data/all.txt
+			sed -i 's/https:/\nhttps:/g' ./data/all.txt
 		else
-			sed -i 's/http/\nhttp/g' ./data/all.txt
+			sed -i 's/http:/\nhttp:/g' ./data/all.txt
 		fi
 		((query--))
 	done
-	if [[ "$force_http" == "1" ]]; then sed -i 's/https/http/g' ./data/all.txt ; fi
+	if [[ "$force_http" == "1" ]]; then sed -i 's/https:/http:/g' ./data/all.txt ; fi
 
 	sort_files
 }
