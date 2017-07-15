@@ -1,13 +1,12 @@
 # BooruToolkit
-#### modular image board organization framework written in Bash
+#### modular local image board library organization framework written in Bash
 #### version 2.3
 
 [Forum thread on e621](https://e621.net/forum/show/233498)
 
 ## Features
-* Download metadata from boorus like e621 (URL can be changed to e926.net to avoid filters)
-* Tag files using Windows softlinks
-* Tag files using Linux softlinks
+* Download metadata from imageboards like e621 (URL can be changed to e926.net to avoid filters)
+* Tag files using softlinking on Windows and Linux (and possibly MacOS)
 * Tag files using TMSU
 * Upload local library to e621 favorites and/or upvoted list
 * Download new images from specified queries
