@@ -1,48 +1,35 @@
-# e621TagOrganizer
-#### modular e621 library organizer written in Bash
+# BooruToolkit
+#### modular image board organization framework written in Bash
+#### version 2.3
 
-
-This is a bash script that I wrote to organize my local e621 library. I needed something that was extension-agnostic, lightweight and easy to modify, and thus TagOrganizer was born.
-
-Out of the box this app supports Windows 10 (using Bash on Windows) and Linux, but you can easily modify it to support anything else, for example MacOS or third-party tagging software.
-
-Since this app is extensible, you can do tagging the way you want to. I've added a template as well as a short manual on how to implement your own modules.
+[Forum thread on e621](https://e621.net/forum/show/233498)
 
 ## Features
-* Can be used with e926.net to avoid filters
-* Easily add your own methods for tagging
-* Everything is broken into functions, code is easy to read and understand.
-* Soft-link tagging is zero-maintenance and doesn't require extra software
-* Doesn't touch the original files, no backups required (though you should always back your things up, don't get the wrong idea!)
+* Download metadata from boorus like e621 (URL can be changed to e926.net to avoid filters)
+* Tag files using Windows softlinks
+* Tag files using Linux softlinks
+* Tag files using TMSU
+* Upload local library to e621 favorites and/or upvoted list
+* Download new images from specified queries
+* Infinite expandability
+
+## Dependencies
+* libxml2-utils (to work with XML APIs)
+* curl
+* recode
+* sed
 
 ## Installation
 
-`$ git clone https://github.com/0x7FF/e621TagOrganizer.git`
+`$ git clone https://github.com/0x7FF/BooruToolkit.git`
 
-`$ bash e621TagOrganizer/TagOrganizer.sh`
+`$ bash BooruToolkit/BooruToolkit.sh`
+
+Make sure you leave the main script in its folder.
 
 ## Usage
 
-### Linux ln:
-* install curl, xmllint, diff, recode, md5sum and sed (you will be prompted to install them if any are missing)
-* Run the script
-* When asked, specify where your files are stored and where to create folders with tagged images
-
-### Bash on Windows (mklink):
-* install curl, xmllint, diff, recode, md5sum and sed (you will be prompted to install them if any are missing)
-* Run the script
-* When asked, specify where your files are stored and where to create folders with tagged images
-
-### TMSU
-* install curl, xmllint, diff, recode, md5sum and sed (you will be prompted to install them if any are missing)
-* run `tmsu init ~` if you haven't done so already
-* Run the script
-* When asked, specify where your files are stored.
-
-### Custom methods
-Function "proc" is iteratively run for every file and every tag in that file. As soon as it's called, you have access to source path, destination path, full name, MD5 and a tag, all available as standard bash variables.
-
-Please consult MODIFY for instructions on creating your own methods.
+Run the script and follow on-screen instructions. To skip the menu and use the most recent menu selection use argument --update
 
 ## Contributing
 
@@ -54,27 +41,10 @@ Please consult MODIFY for instructions on creating your own methods.
 
 ## Known bugs
 
-- [ ] File deletion isn't handled yet, expect dead links in your tag folders if you delete an image.
-- [ ] Recursive mode is not supported on Windows yet.
-
-## History
-
-### TagOrganizer 2.2
-Recursive mode is now live! as well as some minor code enhancements.
-
-### TagOrganizer 2.1
-Added TMSU support and recursive mode.
-
-### TagOrganizer 2.0
-Public release, added support for Linux distributions, configuration and more modular design.
-
-### TagOrganizer 1.2
-Deprecated, only worked with Bash on Windows and only used hard-coded values. Scary stuff.
-
-## Credits
-
-This program has been written in it's entirety by me. Certain features of this app have been made possible by applications like curl, xmllint, diff, recode, md5sum and sed, all of which belong to their original authors.
+- [ ] Recursive mode is not supported on Windows
+- [ ] Update mode is not tested yet
+- [ ] DLU will only work with simple queries (wuthout special characters like `:` `+` etc.)
 
 ## License
 
-TagOrganizer uses MIT license, for more information please consult LICENSE.
+BooruToolkit (TagOrganizer) uses MIT license, for more information please consult LICENSE.

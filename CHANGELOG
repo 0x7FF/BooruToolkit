@@ -1,0 +1,20 @@
+# BooruToolkit 2.3
+Big update! Project has been renamed to BooruToolkit because I feel like it's no longer exclusive to e621
+You can now upload your local files to e621 favorites (as well as upvote them)
+Use BT as an RSS reader and download new images for your queries (beta)
+Full modularity achieved
+Removed license check
+Many code improvements and many bugs squashed
+
+# TagOrganizer 2.2
+Recursive mode is now live!
+As well as some minor code enhancements.
+
+# TagOrganizer 2.1
+Added TMSU support and recursive mode.
+
+# TagOrganizer 2.0
+Public release, added support for Linux distributions, configuration and a more modular design.
+
+# TagOrganizer 1.2
+Deprecated, private release.
