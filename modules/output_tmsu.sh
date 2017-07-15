@@ -18,7 +18,7 @@ function output_tmsu {
 		 exit 0
 	fi
 
-	if [ "$cfg" == "1" ]; then
+	if [ "$cfg" != "1" ]; then
 		while [ ! -d "$librarydir" ]; do read -p "Please enter full directory path to your library (without trailing slash): " librarydir ; done
 	fi
 

@@ -157,6 +157,7 @@ fi
 # if no configuration found, perform first time setup
 if [ "$cfg" != "1" ]; then
     # set paths
+    if [[ "$dbg" == "1" ]]; then echo "cfg isn't set to 1, running configurator"; fi
     if [[ "$platform" == "windows"* ]]; then
       echo 'Use Linux paths for these settings (i.e. /mnt/c/path/to/whatever instead of C:\path\to\whatever)'
       while [ ! -d "$librarydir" ]; do read -p "full directory path to your library (without trailing slash): " librarydir ; done
@@ -186,7 +187,6 @@ if [ "$cfg" != "1" ]; then
 			if [[ "$platform" == "windows"* ]]; then echo winlibrarydir='$winlibrarydir' >> ./settings.cfg ; fi
 			if [[ "$platform" == "windows"* ]]; then echo winsorteddir='$winsorteddir' >> ./settings.cfg ; fi
 		fi
-	fi
 fi
 
 # let modules do initial setup if they need to
