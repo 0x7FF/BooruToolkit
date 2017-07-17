@@ -28,7 +28,7 @@ Make sure you leave the main script in its folder.
 
 ## Usage
 
-Run the script and follow on-screen instructions. To skip the menu and use the most recent menu selection use argument --update
+Run the script and follow on-screen instructions. To skip the menu and use the most recent menu selection use argument `--update`
 
 ## Contributing
 
@@ -42,7 +42,7 @@ Run the script and follow on-screen instructions. To skip the menu and use the m
 
 - [ ] Recursive mode is not supported on Windows
 - [ ] Update mode is not tested yet
-- [ ] DLU will only work with simple queries (wuthout special characters like `:` `+` etc.)
+- [ ] DLU will only work with simple queries (without special characters like `:` `+` etc.)
 
 ## License
 
