@@ -149,9 +149,9 @@ fi
 
 # in case you need to disable configurator you can set cfg=1 at this step
 if [[ "$1" == "--update" ]]; then
-  output_$platform --select --update || true
+  output_$platform --selected --update || true
 else
-  output_$platform --select || true
+  output_$platform --selected || true
 fi
 
 # if no configuration found, perform first time setup
