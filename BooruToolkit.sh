@@ -18,7 +18,7 @@ set -e
 
 # DO NOT MODIFY THESE VALUES, USE settings.cfg INSTEAD
 VERSION=2.3
-baseurl="https://e621.net"
+baseurl="https://e926.net"
 database="processed.txt"
 sleeprate=0.4
 recursive=0
@@ -215,5 +215,5 @@ else
   output_$platform
 fi
 
-echo 'Program done!'
+echo 'Done!'
 exit 0
