@@ -7,15 +7,15 @@
 ## Features
 * Download metadata from imageboards like e926 and others using XML APIs
 * Tag files using filesystem-level softlinking on Windows, Linux and possibly MacOS
-* Tag files using TMSU
+* Tag files using TMSU, a cross-platform utility for file tagging
 * Upload local library to your imageboard's favorites
-* Download new images from specified queries [beta]
-* Infinite expandability and easy-to-understand code
+* Download images from specified queries
+* Easy-to-understand code and plugin support
 
 ## Dependencies
-* libxml2-utils (to work with XML APIs)
-* curl (to access APIs)
-* recode (fix character encoding in responses)
+* libxml2-utils (for working with XML APIs)
+* curl (for accessing APIs)
+* recode (for fixing text encoding in API responses)
 
 ## Installation
 
@@ -39,9 +39,9 @@ Run the script and follow on-screen instructions.
 
 ## Known bugs
 
-- [ ] Recursive mode is not supported on Windows
-- [ ] DLU will only work with simple queries (without special characters like `:` `+` etc.)
+* Recursive mode is not supported on Windows
+* DLU will only work with simple queries (without special characters like `:` `+` etc.)
 
 ## License
 
-BooruToolkit (TagOrganizer) uses MIT license, for more information please consult LICENSE.
+BooruToolkit (TagOrganizer) is public domain, for more information please consult LICENSE.
