@@ -2,7 +2,7 @@
 #### local image board library organization framework written in Bash
 #### version 2.3 Final
 
-## This project is now abandoned and will not receive any future updates.
+#### This project is now abandoned and will not receive any future updates.
 
 [Forum thread on e926](https://e926.net/forum/show/233498)
 
