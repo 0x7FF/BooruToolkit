@@ -1,6 +1,8 @@
 # BooruToolkit
 #### local image board library organization framework written in Bash
-#### version 2.3
+#### version 2.3 Final
+
+## This project is now abandoned and will not receive any future updates.
 
 [Forum thread on e926](https://e926.net/forum/show/233498)
 
@@ -19,7 +21,7 @@
 
 ## Installation
 
-`$ git clone https://github.com/vladasbarisas/BooruToolkit.git`
+`$ git clone https://github.com/manualmanul/BooruToolkit.git`
 
 `$ bash BooruToolkit/BooruToolkit.sh`
 
@@ -28,14 +30,6 @@ Make sure you leave the main script in its folder.
 ## Usage
 
 Run the script and follow on-screen instructions.
-
-## Contributing
-
-1. Fork it!
-2. Create your feature branch: `git checkout -b my-new-feature`
-3. Commit your changes: `git commit -am 'Added some feature'`
-4. Push to the branch: `git push origin my-new-feature`
-5. Submit a pull request.
 
 ## Known bugs
 
